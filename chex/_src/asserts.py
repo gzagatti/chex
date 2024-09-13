@@ -1555,7 +1555,16 @@ def _assert_trees_all_equal_static(
         _ai.jnp_to_np_array(arr_1),
         _ai.jnp_to_np_array(arr_2),
         err_msg="Error in value equality check: Values not exactly equal",
-        strict=strict)
+        )
+    # strict error checking was only introduced in Numpy version 1.24.0
+    # but the implementation is pretty straightforward, so we MonkeyPatch it
+    # https://github.com/numpy/numpy/blob/v2.1.0/numpy/testing/_private/utils.py#L760
+    if strict:
+        arr_1 = np.asanyarray(_ai.jnp_to_np_array(arr_1))
+        arr_2 = np.asanyarray(_ai.jnp_to_np_array(arr_2))
+        if not (arr_1.shape == arr_2.shape) and (arr_1.dtype == arr_2.dtype):
+            raise AssertionError("Error in value equality check: Values not exactly equal")
+
 
   def cmp_fn(arr_1, arr_2) -> bool:
     try:
